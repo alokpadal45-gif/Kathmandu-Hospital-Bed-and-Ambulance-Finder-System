@@ -1,0 +1,6 @@
+-r base.txt
+
+channels-redis==4.3.0
+mysqlclient==2.2.7
+gunicorn==23.0.0
+whitenoise==6.7.0
