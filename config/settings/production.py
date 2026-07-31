@@ -1,9 +1,6 @@
-"""
-Production settings.
-Run with: DJANGO_SETTINGS_MODULE=config.settings.production
-Every sensitive value comes from environment variables — nothing here is
-hard-coded, so this file is safe to commit to GitHub.
-"""
+# production settings
+# run with DJANGO_SETTINGS_MODULE=config.settings.production
+# everything sensitive comes from env vars so this file is safe to push to github
 
 from .base import *  # noqa: F401,F403
 from decouple import config, Csv
@@ -12,10 +9,7 @@ DEBUG = False
 
 ALLOWED_HOSTS = config('ALLOWED_HOSTS', cast=Csv())
 
-# ---------------------------------------------------------------------------
-# Database — MySQL in production, exactly as flagged "optional" in the
-# feasibility study. Falls back to values from .env.
-# ---------------------------------------------------------------------------
+# mysql in production (this was listed as optional in the feasibility study)
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
@@ -28,10 +22,8 @@ DATABASES = {
     }
 }
 
-# ---------------------------------------------------------------------------
-# Channels layer — Redis-backed so live availability updates broadcast
-# correctly across multiple Daphne worker processes.
-# ---------------------------------------------------------------------------
+# redis backed channel layer so live updates work across multiple daphne
+# workers, not just one process
 CHANNEL_LAYERS = {
     'default': {
         'BACKEND': 'channels_redis.core.RedisChannelLayer',
@@ -41,9 +33,7 @@ CHANNEL_LAYERS = {
     }
 }
 
-# ---------------------------------------------------------------------------
-# Security hardening
-# ---------------------------------------------------------------------------
+# security stuff
 SECURE_SSL_REDIRECT = True
 SESSION_COOKIE_SECURE = True
 CSRF_COOKIE_SECURE = True

@@ -1,0 +1,115 @@
+
+{% extends "base.html" %}
+
+{% block title %}Request an Ambulance — Kathmandu Emergency Finder{% endblock %}
+
+{% block extra_css %}
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+    <div class="col-lg-6">
+        <div class="card shadow-sm h-100">
+            <div class="card-body p-4">
+                <h4 class="card-title mb-1">Dispatch Ambulance</h4>
+                <p class="text-muted mb-4">
+                    Please provide accurate information for the fastest possible response.
+                </p>
+
+                <form method="post" novalidate>
+                    {% csrf_token %}
+                    {% for field in form %}
+                        {% if field.is_hidden %}
+                            {{ field }}
+                        {% else %}
+                        <div class="mb-3">
+                            <label for="{{ field.id_for_label }}" class="form-label">{{ field.label }}</label>
+                            {{ field }}
+                            {% if field.help_text %}
+                                <div class="form-text">{{ field.help_text }}</div>
+                            {% endif %}
+                            {% for error in field.errors %}
+                                <div class="text-danger small mt-1">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    {% endfor %}
+                    <button type="submit" class="btn btn-danger w-100">Request Ambulance</button>
+                    <p class="text-muted small text-center mt-2 mb-0">
+                        By submitting, you confirm this is a genuine medical emergency.
+                    </p>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-6">
+        <div id="request-map" class="rounded mb-3" style="height: 340px; border: 1px solid var(--color-border);"></div>
+
+        <div class="card shadow-sm">
+            <div class="card-body p-4">
+                <h6 class="mb-3">What happens next</h6>
+                <div class="timeline">
+                    <div class="timeline-step">
+                        <div class="timeline-dot"></div>
+                        <div>
+                            <div class="fw-semibold">Requested</div>
+                            <p class="text-muted small mb-0">Your request is submitted to nearby hospitals with available ambulances.</p>
+                        </div>
+                    </div>
+                    <div class="timeline-step">
+                        <div class="timeline-dot"></div>
+                        <div>
+                            <div class="fw-semibold">Accepted</div>
+                            <p class="text-muted small mb-0">A hospital confirms and assigns a specific ambulance to your request.</p>
+                        </div>
+                    </div>
+                    <div class="timeline-step">
+                        <div class="timeline-dot"></div>
+                        <div>
+                            <div class="fw-semibold">Dispatched</div>
+                            <p class="text-muted small mb-0">The ambulance is on its way to your pickup location.</p>
+                        </div>
+                    </div>
+                    <div class="timeline-step">
+                        <div class="timeline-dot"></div>
+                        <div>
+                            <div class="fw-semibold">Completed</div>
+                            <p class="text-muted small mb-0">You can track every step live once your request is submitted.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+(function() {
+    const map = L.map('request-map').setView([27.7040, 85.3140], 12);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap contributors',
+        maxZoom: 18,
+    }).addTo(map);
+
+    let userMarker = null;
+
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(function(position) {
+            const lat = position.coords.latitude;
+            const lng = position.coords.longitude;
+
+            document.getElementById('id_pickup_latitude').value = lat;
+            document.getElementById('id_pickup_longitude').value = lng;
+
+            map.setView([lat, lng], 14);
+            userMarker = L.marker([lat, lng]).addTo(map).bindPopup('Your location').openPopup();
+        });
+    }
+})();
+</script>
+{% endblock %}

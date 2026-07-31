@@ -1,0 +1,128 @@
+{% extends "base.html" %}
+
+{% block title %}Request #{{ req.id }} — Kathmandu Emergency Finder{% endblock %}
+
+{% block content %}
+<div class="row g-4">
+    <div class="col-lg-7">
+        <div class="card shadow-sm">
+            <div class="card-body p-4">
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                    <h4 class="mb-0">Request #{{ req.id }}</h4>
+                </div>
+
+                <dl class="row mb-0">
+                    <dt class="col-sm-4">Patient</dt>
+                    <dd class="col-sm-8">{{ req.patient_name }}</dd>
+
+                    <dt class="col-sm-4">Contact</dt>
+                    <dd class="col-sm-8">{{ req.contact_number }}</dd>
+
+                    <dt class="col-sm-4">Pickup Address</dt>
+                    <dd class="col-sm-8">{{ req.pickup_address }}</dd>
+
+                    <dt class="col-sm-4">Details</dt>
+                    <dd class="col-sm-8">{{ req.emergency_description|default:"—" }}</dd>
+
+                    <dt class="col-sm-4">Hospital</dt>
+                    <dd class="col-sm-8" id="hospital-name">
+                        {{ req.hospital.name|default:"Not yet assigned" }}
+                    </dd>
+
+                    <dt class="col-sm-4">Ambulance</dt>
+                    <dd class="col-sm-8" id="ambulance-number">
+                        {{ req.assigned_ambulance.vehicle_number|default:"—" }}
+                    </dd>
+
+                    <dt class="col-sm-4">Requested</dt>
+                    <dd class="col-sm-8">{{ req.requested_at|date:"M d, Y H:i" }}</dd>
+                </dl>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-5">
+        <div class="card shadow-sm">
+            <div class="card-body p-4">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h6 class="mb-0">Live Request Status</h6>
+                    <span class="badge bg-success-subtle text-success small">
+                        <span class="status-dot status-available"></span>Live
+                    </span>
+                </div>
+
+                <div class="status-timeline" id="status-timeline">
+                    <div class="status-step" data-step="pending">
+                        <div class="status-step-dot"></div>
+                        <div>
+                            <div class="fw-semibold">Requested</div>
+                            <p class="text-muted small mb-0" data-detail="pending">Waiting for a hospital to accept.</p>
+                        </div>
+                    </div>
+                    <div class="status-step" data-step="accepted">
+                        <div class="status-step-dot"></div>
+                        <div>
+                            <div class="fw-semibold">Accepted</div>
+                            <p class="text-muted small mb-0" data-detail="accepted">A hospital has assigned an ambulance.</p>
+                        </div>
+                    </div>
+                    <div class="status-step" data-step="dispatched">
+                        <div class="status-step-dot"></div>
+                        <div>
+                            <div class="fw-semibold">On the Way</div>
+                            <p class="text-muted small mb-0" data-detail="dispatched">The ambulance is en route to you.</p>
+                        </div>
+                    </div>
+                    <div class="status-step" data-step="completed">
+                        <div class="status-step-dot"></div>
+                        <div>
+                            <div class="fw-semibold">Completed</div>
+                            <p class="text-muted small mb-0" data-detail="completed">Patient has been picked up.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <p class="text-muted small mt-3 mb-0">
+                    This page updates automatically — no need to refresh.
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+(function() {
+    const statusOrder = ['pending', 'accepted', 'dispatched', 'completed'];
+    const timeline = document.getElementById('status-timeline');
+
+    function applyStatus(status) {
+        const currentIndex = statusOrder.indexOf(status);
+        timeline.querySelectorAll('.status-step').forEach(function(step) {
+            const stepIndex = statusOrder.indexOf(step.dataset.step);
+            step.classList.remove('status-step-done', 'status-step-current');
+            if (status === 'cancelled') return;
+            if (stepIndex < currentIndex) step.classList.add('status-step-done');
+            if (stepIndex === currentIndex) step.classList.add('status-step-current');
+        });
+    }
+
+    applyStatus('{{ req.status }}');
+
+    const protocol = window.location.protocol === 'https:' ? 'wss' : 'ws';
+    const socket = new WebSocket(protocol + '://' + window.location.host + '/ws/requests/{{ req.id }}/');
+
+    socket.onmessage = function(event) {
+        const data = JSON.parse(event.data);
+        applyStatus(data.status);
+        document.getElementById('hospital-name').textContent = data.hospital_name || 'Not yet assigned';
+        document.getElementById('ambulance-number').textContent = data.ambulance_number || '—';
+    };
+
+    socket.onerror = function(err) {
+        console.error('Request tracking error:', err);
+    };
+})();
+</script>
+{% endblock %}

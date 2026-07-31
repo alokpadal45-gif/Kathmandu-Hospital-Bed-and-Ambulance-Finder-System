@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+
+{% block title %}Sign Up — Kathmandu Emergency Finder{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card shadow-sm">
+            <div class="card-body p-4">
+                <h3 class="card-title mb-1">Create your account</h3>
+                <p class="text-muted mb-4">Find hospital beds, ICUs, and ambulances in real time.</p>
+
+                <form method="post" novalidate>
+                    {% csrf_token %}
+                    {% for field in form %}
+                        <div class="mb-3">
+                            <label for="{{ field.id_for_label }}" class="form-label">{{ field.label }}</label>
+                            {{ field }}
+                            {% if field.help_text %}
+                                <div class="form-text">{{ field.help_text }}</div>
+                            {% endif %}
+                            {% for error in field.errors %}
+                                <div class="text-danger small mt-1">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                    {% endfor %}
+                    <button type="submit" class="btn btn-danger w-100">Sign Up</button>
+                </form>
+
+                <p class="text-center mt-3 mb-0">
+                    Already have an account? <a href="{% url 'accounts:login' %}">Log in</a>
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

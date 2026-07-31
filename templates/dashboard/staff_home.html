@@ -1,0 +1,118 @@
+{% extends "base.html" %}
+
+{% block title %}Staff Dashboard — Kathmandu Emergency Finder{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h3 class="mb-1">{{ hospital.name }}</h3>
+        <p class="text-muted mb-0">
+            <span class="status-dot status-available"></span>Live sync active — changes here update citizen search instantly.
+        </p>
+    </div>
+    <a href="{% url 'dashboard:staff_requests' %}" class="btn btn-outline-danger">View Requests</a>
+</div>
+
+<div class="row g-3 mb-4">
+    <div class="col-md-3">
+        <div class="card text-center shadow-sm">
+            <div class="card-body">
+                <div class="vital vital-{{ hospital.bed_status }}">{{ hospital.available_beds }}/{{ hospital.total_beds }}</div>
+                <small class="text-muted">Beds available</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center shadow-sm">
+            <div class="card-body">
+                <div class="vital vital-{{ hospital.icu_status }}">{{ hospital.available_icu_beds }}/{{ hospital.total_icu_beds }}</div>
+                <small class="text-muted">ICU available</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center shadow-sm">
+            <div class="card-body">
+                <div class="fs-3 fw-bold">{{ pending_count }}</div>
+                <small class="text-muted">Pending requests</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card text-center shadow-sm">
+            <div class="card-body">
+                <div class="fs-3 fw-bold">{{ active_count }}</div>
+                <small class="text-muted">Active dispatches</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-body">
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h6 class="mb-0">Ward Management</h6>
+            <span class="text-muted small">Edit the fields below and submit to update availability</span>
+        </div>
+
+        <form method="post">
+            {% csrf_token %}
+            <div class="table-responsive">
+                <table class="table align-middle">
+                    <thead>
+                        <tr>
+                            <th>Ward / Unit</th>
+                            <th>Status</th>
+                            <th style="width: 140px;">Total Capacity</th>
+                            <th style="width: 140px;">Currently Available</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td class="fw-semibold">General Beds</td>
+                            <td>
+                                <span class="badge
+                                    {% if hospital.bed_status == 'available' %}bg-success
+                                    {% elif hospital.bed_status == 'limited' %}bg-warning text-dark
+                                    {% else %}bg-danger{% endif %}">
+                                    {{ hospital.bed_status|title }}
+                                </span>
+                            </td>
+                            <td>{{ form.total_beds }}</td>
+                            <td>{{ form.available_beds }}</td>
+                        </tr>
+                        <tr>
+                            <td class="fw-semibold">ICU Beds</td>
+                            <td>
+                                <span class="badge
+                                    {% if hospital.icu_status == 'available' %}bg-success
+                                    {% elif hospital.icu_status == 'limited' %}bg-warning text-dark
+                                    {% else %}bg-danger{% endif %}">
+                                    {{ hospital.icu_status|title }}
+                                </span>
+                            </td>
+                            <td>{{ form.total_icu_beds }}</td>
+                            <td>{{ form.available_icu_beds }}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            {% for field in form %}
+                {% for error in field.errors %}
+                    <div class="text-danger small">{{ field.label }}: {{ error }}</div>
+                {% endfor %}
+            {% endfor %}
+
+            <div class="d-flex justify-content-end gap-2 mt-3">
+                <a href="{% url 'dashboard:staff_dashboard' %}" class="btn btn-outline-secondary">Discard</a>
+                <button type="submit" class="btn btn-danger">Submit Update</button>
+            </div>
+        </form>
+
+        <p class="text-muted small mt-3 mb-0">
+            Note: updating available counts here immediately changes what citizens see when searching for hospitals.
+        </p>
+    </div>
+</div>
+{% endblock %}

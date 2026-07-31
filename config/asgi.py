@@ -1,17 +1,5 @@
-"""
-ASGI config for the Kathmandu Emergency Bed and Ambulance Finder System.
-
-This is the entry point Daphne actually serves. It routes two kinds of
-traffic:
-  - "http"      -> normal Django views/REST API (unchanged behaviour)
-  - "websocket" -> Django Channels consumers, used for real-time features
-                   like live bed/ICU/ambulance availability updates.
-
-The websocket routing list (websocket_urlpatterns) is defined per-app and
-combined here once Step 6 (real-time layer) is built. For now it's an empty
-list so the server runs correctly; we will not touch this file again until
-Step 6 except to import each app's routing module.
-"""
+# this is what daphne actually serves. routes http requests to normal
+# django views and websocket connections to channels consumers.
 
 import os
 
@@ -21,16 +9,16 @@ from django.core.asgi import get_asgi_application
 
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'config.settings.development')
 
-# Must be called before importing anything that touches Django models,
-# so app registry is ready when consumers are imported.
+# has to be called before importing anything that touches django models
+# (the routing imports below pull in consumers, which import models)
 django_asgi_app = get_asgi_application()
+
+from apps.ambulances.routing import websocket_urlpatterns as ambulance_ws_urlpatterns  # noqa: E402
+from apps.hospitals.routing import websocket_urlpatterns as hospital_ws_urlpatterns  # noqa: E402
 
 application = ProtocolTypeRouter({
     'http': django_asgi_app,
     'websocket': AuthMiddlewareStack(
-        URLRouter([
-            # Populated in Step 6, e.g.:
-            # path('ws/hospitals/<int:hospital_id>/', HospitalStatusConsumer.as_asgi()),
-        ])
+        URLRouter(hospital_ws_urlpatterns + ambulance_ws_urlpatterns)
     ),
 })

@@ -6,3 +6,6 @@ class AmbulancesConfig(AppConfig):
     name = 'apps.ambulances'
     label = 'ambulances'
     verbose_name = 'Ambulance Requests'
+
+    def ready(self):
+        import apps.ambulances.signals  # noqa: F401 - just registers the signal

@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+
+{% block title %}Ambulance Requests — Kathmandu Emergency Finder{% endblock %}
+
+{% block content %}
+<h3 class="mb-4">Ambulance Requests — {{ hospital.name }}</h3>
+
+<div class="d-flex align-items-center gap-2 mb-3">
+    <h6 class="mb-0">Pending</h6>
+    <span class="badge bg-warning text-dark">{{ pending_requests|length }}</span>
+</div>
+
+<div class="card shadow-sm mb-5">
+    {% if not pending_requests %}
+    <div class="card-body text-center py-4">
+        <p class="text-muted mb-0">No pending requests right now.</p>
+    </div>
+    {% else %}
+    <div class="table-responsive">
+        <table class="table align-middle mb-0">
+            <thead>
+                <tr>
+                    <th>Patient</th>
+                    <th>Contact</th>
+                    <th>Pickup</th>
+                    <th>Details</th>
+                    <th>Requested</th>
+                    <th style="min-width: 260px;">Accept with</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for req in pending_requests %}
+                <tr>
+                    <td>
+                        {{ req.patient_name }}
+                        {% if req.hospital_id == hospital.id %}
+                            <span class="badge bg-primary ms-1">Requested you</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ req.contact_number }}</td>
+                    <td>{{ req.pickup_address }}</td>
+                    <td>{{ req.emergency_description|default:"—"|truncatewords:10 }}</td>
+                    <td>{{ req.requested_at|date:"M d, H:i" }}</td>
+                    <td>
+                        {% if available_ambulances %}
+                        <form method="post" action="{% url 'dashboard:staff_accept_request' req.pk %}" class="d-flex gap-2">
+                            {% csrf_token %}
+                            <select name="ambulance_id" class="form-select form-select-sm" required>
+                                {% for amb in available_ambulances %}
+                                    <option value="{{ amb.id }}">{{ amb.vehicle_number }}</option>
+                                {% endfor %}
+                            </select>
+                            <button type="submit" class="btn btn-sm btn-danger text-nowrap">Accept</button>
+                        </form>
+                        {% else %}
+                            <span class="text-muted small">No ambulance available</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+</div>
+
+<div class="d-flex align-items-center gap-2 mb-3">
+    <h6 class="mb-0">Active Dispatches</h6>
+    <span class="badge bg-primary">{{ active_requests|length }}</span>
+</div>
+
+<div class="card shadow-sm">
+    {% if not active_requests %}
+    <div class="card-body text-center py-4">
+        <p class="text-muted mb-0">Nothing currently out.</p>
+    </div>
+    {% else %}
+    <div class="table-responsive">
+        <table class="table align-middle mb-0">
+            <thead>
+                <tr>
+                    <th>Patient</th>
+                    <th>Pickup</th>
+                    <th>Ambulance</th>
+                    <th>Status</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for req in active_requests %}
+                <tr>
+                    <td>{{ req.patient_name }}</td>
+                    <td>{{ req.pickup_address }}</td>
+                    <td>{{ req.assigned_ambulance.vehicle_number|default:"—" }}</td>
+                    <td>
+                        <span class="badge {% if req.status == 'accepted' %}bg-info text-dark{% else %}bg-primary{% endif %}">
+                            {{ req.get_status_display }}
+                        </span>
+                    </td>
+                    <td class="d-flex gap-2">
+                        {% if req.status == 'accepted' %}
+                        <form method="post" action="{% url 'dashboard:staff_transition_request' req.pk 'dispatch' %}">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-sm btn-primary">Mark Dispatched</button>
+                        </form>
+                        {% endif %}
+                        <form method="post" action="{% url 'dashboard:staff_transition_request' req.pk 'complete' %}">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-sm btn-success">Mark Completed</button>
+                        </form>
+                        <form method="post" action="{% url 'dashboard:staff_transition_request' req.pk 'cancel' %}">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-sm btn-outline-secondary">Cancel</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

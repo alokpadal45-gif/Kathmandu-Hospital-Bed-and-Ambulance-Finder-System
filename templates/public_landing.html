@@ -1,0 +1,96 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block title %}Kathmandu Emergency Finder — Find Emergency Care Near You{% endblock %}
+
+{% block content %}
+<div class="hero-panel p-4 p-md-5 mb-5">
+    <div class="row align-items-center g-4">
+        <div class="col-lg-7">
+            <h1 class="display-5 mb-3">
+                Find Emergency Care <span class="text-accent">Near You</span>
+            </h1>
+            <p class="lead text-muted mb-4">
+                Real-time hospital bed tracking and emergency ambulance dispatch across
+                Kathmandu. Every second counts in an emergency.
+            </p>
+            <div class="d-flex flex-wrap gap-2">
+                <a href="{% url 'accounts:signup' %}" class="btn btn-danger btn-lg">Get Started</a>
+                <a href="{% url 'accounts:login' %}" class="btn btn-outline-secondary btn-lg">Log In</a>
+            </div>
+        </div>
+        <div class="col-lg-5">
+            <div class="hero-art">
+                <svg viewBox="0 0 200 200" width="100%" xmlns="http://www.w3.org/2000/svg">
+                    <circle cx="100" cy="100" r="92" fill="#E7EEF2"/>
+                    <path d="M100 40v120M40 100h120" stroke="#C0392B" stroke-width="14" stroke-linecap="round"/>
+                    <circle cx="100" cy="100" r="60" fill="none" stroke="#0F3D5C" stroke-width="3" stroke-dasharray="6 8"/>
+                </svg>
+            </div>
+        </div>
+    </div>
+</div>
+
+<h5 class="mb-3">Quick Actions</h5>
+<div class="row g-3 mb-5">
+    <div class="col-md-3">
+        <a href="{% url 'accounts:signup' %}" class="quick-action quick-action-primary d-block text-decoration-none h-100 p-4">
+            <div class="fw-semibold fs-5 mb-1">Request an Ambulance</div>
+            <p class="mb-0 small opacity-75">Immediate dispatch for critical emergencies within the Kathmandu Valley.</p>
+        </a>
+    </div>
+    <div class="col-md-3">
+        <a href="{% url 'accounts:signup' %}" class="quick-action d-block text-decoration-none h-100 p-4">
+            <div class="fw-semibold fs-5 mb-1">Search Hospitals</div>
+            <p class="mb-0 small text-muted">Filter by hospital type, location, and live bed availability.</p>
+        </a>
+    </div>
+    <div class="col-md-3">
+        <a href="#live-hospitals" class="quick-action d-block text-decoration-none h-100 p-4">
+            <div class="fw-semibold fs-5 mb-1">Live Bed Tracking</div>
+            <p class="mb-0 small text-muted"><span class="status-dot status-available"></span>Updated in real time, every time staff make a change.</p>
+        </a>
+    </div>
+    <div class="col-md-3">
+        <div class="quick-action quick-action-dark h-100 p-4">
+            <div class="fw-semibold fs-5 mb-1">Emergency Contacts</div>
+            <p class="mb-1 small opacity-75">Ambulance: 102 &middot; Police: 100</p>
+        </div>
+    </div>
+</div>
+
+<div class="d-flex justify-content-between align-items-center mb-3" id="live-hospitals">
+    <h5 class="mb-0">Hospitals in the System</h5>
+</div>
+
+{% if not featured_hospitals %}
+    <p class="text-muted">No hospitals have been added yet.</p>
+{% else %}
+<div class="row g-3">
+    {% for hospital in featured_hospitals %}
+    <div class="col-md-4">
+        <div class="card hospital-card status-{{ hospital.overall_status }} h-100">
+            {% if hospital.image %}
+                <img src="{{ hospital.image.url }}" class="card-img-top hospital-photo" alt="{{ hospital.name }}">
+            {% else %}
+                <div class="hospital-photo-generated" style="background: linear-gradient(135deg, {{ hospital.avatar_color }} 0%, {{ hospital.avatar_color }}CC 100%);">
+                    <span class="hospital-photo-initial">{{ hospital.name|slice:":1" }}</span>
+                    <svg class="hospital-photo-cross" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M10 3v14M3 10h14" stroke="#fff" stroke-width="2.5" stroke-linecap="round" opacity="0.85"/>
+                    </svg>
+                </div>
+            {% endif %}
+            <div class="card-body">
+                <h6 class="card-title mb-1">{{ hospital.name }}</h6>
+                <p class="text-muted small mb-2">{{ hospital.city }}</p>
+                <div class="d-flex gap-3 small">
+                    <span><span class="status-dot status-{{ hospital.bed_status }}"></span>{{ hospital.available_beds }} beds</span>
+                    <span><span class="status-dot status-{{ hospital.icu_status }}"></span>{{ hospital.available_icu_beds }} ICU</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+{% endif %}
+{% endblock %}

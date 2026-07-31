@@ -1,24 +1,15 @@
-"""
-Base settings shared by every environment.
-Environment-specific values (DEBUG, ALLOWED_HOSTS, database, etc.)
-live in development.py / production.py, which import * from here.
-"""
+# base settings, shared across dev and production.
+# environment specific stuff (DEBUG, database, etc) goes in development.py
+# and production.py, which both import everything from here first.
 
 from pathlib import Path
 from decouple import config, Csv
 
-# Build paths inside the project like this: BASE_DIR / 'subdir'.
-# BASE_DIR points to the project root (kathmandu_emergency_system/), three levels up from this file.
 BASE_DIR = Path(__file__).resolve().parent.parent.parent
 
-# ---------------------------------------------------------------------------
-# Core security settings (values pulled from .env — never hard-code secrets)
-# ---------------------------------------------------------------------------
 SECRET_KEY = config('SECRET_KEY')
 
-# ---------------------------------------------------------------------------
-# Application definition
-# ---------------------------------------------------------------------------
+# apps
 DJANGO_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -71,23 +62,16 @@ TEMPLATES = [
     },
 ]
 
-# Both WSGI and ASGI entry points are defined. WSGI stays available for
-# management commands / tooling that expects it; ASGI (config/asgi.py) is
-# what Daphne actually serves, since Channels needs an async-capable server
-# for the real-time WebSocket features (live bed/ICU/ambulance updates).
+# wsgi stays around for management commands, but daphne actually serves
+# through asgi (config/asgi.py) since channels needs an async server for
+# the websocket stuff
 WSGI_APPLICATION = 'config.wsgi.application'
 ASGI_APPLICATION = 'config.asgi.application'
 
-# ---------------------------------------------------------------------------
-# Custom user model — required because our stakeholders (Citizen, Hospital
-# Staff, Admin, Health Authority) are role-based rather than Django's default
-# single generic user. Defined in apps/accounts/models.py.
-# ---------------------------------------------------------------------------
+# custom user model with roles, defined in apps/accounts/models.py
 AUTH_USER_MODEL = 'accounts.User'
 
-# ---------------------------------------------------------------------------
-# Password validation
-# ---------------------------------------------------------------------------
+# password validation
 AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator'},
     {'NAME': 'django.contrib.auth.password_validation.MinimumLengthValidator'},
@@ -95,17 +79,13 @@ AUTH_PASSWORD_VALIDATORS = [
     {'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator'},
 ]
 
-# ---------------------------------------------------------------------------
-# Internationalization
-# ---------------------------------------------------------------------------
+# timezone stuff
 LANGUAGE_CODE = 'en-us'
 TIME_ZONE = 'Asia/Kathmandu'
 USE_I18N = True
 USE_TZ = True
 
-# ---------------------------------------------------------------------------
-# Static & media files
-# ---------------------------------------------------------------------------
+# static and media files
 STATIC_URL = 'static/'
 STATICFILES_DIRS = [BASE_DIR / 'static']
 STATIC_ROOT = BASE_DIR / 'staticfiles'
@@ -115,10 +95,7 @@ MEDIA_ROOT = BASE_DIR / 'media'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-# ---------------------------------------------------------------------------
-# Django REST Framework — sets sane project-wide defaults; individual
-# viewsets can still override permissions per-role (Step 5).
-# ---------------------------------------------------------------------------
+# DRF defaults, viewsets can override permissions per role later
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
         'rest_framework.authentication.SessionAuthentication',
@@ -131,9 +108,8 @@ REST_FRAMEWORK = {
     'PAGE_SIZE': 20,
 }
 
-# ---------------------------------------------------------------------------
-# Login/logout redirects (used by templated views in Steps 7–9)
-# ---------------------------------------------------------------------------
+# LOGIN_REDIRECT_URL now goes to the real dashboard router, which sends
+# each role to their actual page (dashboard:home in apps/dashboard/views.py)
 LOGIN_URL = 'accounts:login'
 LOGIN_REDIRECT_URL = 'dashboard:home'
 LOGOUT_REDIRECT_URL = 'accounts:login'

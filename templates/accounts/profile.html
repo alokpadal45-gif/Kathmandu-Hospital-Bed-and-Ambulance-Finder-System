@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+
+{% block title %}My Profile — Kathmandu Emergency Finder{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card shadow-sm">
+            <div class="card-body p-4">
+                <h3 class="card-title mb-3">Account Overview</h3>
+                <dl class="row mb-0">
+                    <dt class="col-sm-4">Username</dt>
+                    <dd class="col-sm-8">{{ user.username }}</dd>
+                    <dt class="col-sm-4">Full name</dt>
+                    <dd class="col-sm-8">{{ user.get_full_name|default:"—" }}</dd>
+                    <dt class="col-sm-4">Email</dt>
+                    <dd class="col-sm-8">{{ user.email|default:"—" }}</dd>
+                    <dt class="col-sm-4">Phone</dt>
+                    <dd class="col-sm-8">{{ user.phone_number|default:"—" }}</dd>
+                    <dt class="col-sm-4">Role</dt>
+                    <dd class="col-sm-8"><span class="badge bg-danger">{{ user.get_role_display }}</span></dd>
+                </dl>
+                <hr>
+                <p class="text-muted small mb-0">
+                    This is a temporary landing page. Once your role-specific dashboard is built,
+                    you'll land there automatically after logging in instead.
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,56 @@
+{% extends "base.html" %}
+
+{% block title %}Manage Hospitals — Kathmandu Emergency Finder{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-2">
+    <h3 class="mb-0">Hospitals</h3>
+    <a href="/admin/hospitals/hospital/add/" class="btn btn-danger">+ Add Hospital</a>
+</div>
+
+<p class="text-muted small mb-4">
+    Editing a hospital's details (name, address, location, contact info) is done through the
+    <a href="/admin/hospitals/hospital/">full Django admin</a>. This page just controls whether
+    a hospital shows up in citizen search.
+</p>
+
+<div class="card shadow-sm">
+    <div class="table-responsive">
+        <table class="table align-middle mb-0">
+            <thead>
+                <tr>
+                    <th>Name</th>
+                    <th>City</th>
+                    <th>Beds</th>
+                    <th>ICU</th>
+                    <th>Status</th>
+                    <th></th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for hospital in hospitals %}
+                <tr>
+                    <td class="fw-semibold">{{ hospital.name }}</td>
+                    <td>{{ hospital.city }}</td>
+                    <td><span class="vital vital-{{ hospital.bed_status }}" style="font-size: 1rem;">{{ hospital.available_beds }}/{{ hospital.total_beds }}</span></td>
+                    <td><span class="vital vital-{{ hospital.icu_status }}" style="font-size: 1rem;">{{ hospital.available_icu_beds }}/{{ hospital.total_icu_beds }}</span></td>
+                    <td>
+                        <span class="badge {% if hospital.is_active %}bg-success{% else %}bg-secondary{% endif %}">
+                            {% if hospital.is_active %}Active{% else %}Inactive{% endif %}
+                        </span>
+                    </td>
+                    <td>
+                        <form method="post" action="{% url 'dashboard:admin_toggle_hospital' hospital.pk %}">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-sm btn-outline-secondary">
+                                {% if hospital.is_active %}Deactivate{% else %}Activate{% endif %}
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

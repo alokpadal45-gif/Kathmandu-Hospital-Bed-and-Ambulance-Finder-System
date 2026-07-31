@@ -1,0 +1,121 @@
+{% extends "base.html" %}
+
+{% block title %}Accounts — Kathmandu Emergency Finder{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h3 class="mb-0">Account Management</h3>
+    <a href="{% url 'dashboard:admin_create_staff_account' %}" class="btn btn-danger">
+        + Create Hospital Staff Account
+    </a>
+</div>
+
+<div class="d-flex align-items-center gap-2 mb-3">
+    <h6 class="mb-0">Pending Verifications</h6>
+    {% if pending_users %}<span class="badge bg-warning text-dark">{{ pending_users|length }}</span>{% endif %}
+</div>
+
+<div class="card shadow-sm mb-5">
+    {% if not pending_users %}
+    <div class="card-body text-center py-4">
+        <p class="text-muted mb-0">No accounts waiting for verification.</p>
+    </div>
+    {% else %}
+    <div class="table-responsive">
+        <table class="table align-middle mb-0">
+            <thead>
+                <tr>
+                    <th>Username</th>
+                    <th>Role</th>
+                    <th>Email</th>
+                    <th>Signed up</th>
+                    <th style="min-width: 320px;">Action</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for pending_user in pending_users %}
+                <tr>
+                    <td class="fw-semibold">{{ pending_user.username }}</td>
+                    <td><span class="badge bg-secondary">{{ pending_user.get_role_display }}</span></td>
+                    <td>{{ pending_user.email|default:"—" }}</td>
+                    <td>{{ pending_user.created_at|date:"M d, Y" }}</td>
+                    <td>
+                        <form method="post" action="{% url 'dashboard:admin_verify_account' pending_user.pk %}"
+                              class="d-flex gap-2 align-items-center">
+                            {% csrf_token %}
+                            {% if pending_user.role == 'hospital_staff' %}
+                                <select name="hospital_id" class="form-select form-select-sm" required>
+                                    <option value="">Assign hospital...</option>
+                                    {% for hospital in hospitals %}
+                                        <option value="{{ hospital.id }}">{{ hospital.name }}</option>
+                                    {% endfor %}
+                                </select>
+                                <input type="text" name="position" class="form-control form-control-sm"
+                                       placeholder="Position (optional)">
+                            {% endif %}
+                            <button type="submit" class="btn btn-sm btn-success text-nowrap">Verify</button>
+                        </form>
+                    </td>
+                </tr>
+                <tr>
+                    <td colspan="5" class="pt-0 pb-2 text-end border-0">
+                        <form method="post" action="{% url 'dashboard:admin_reject_account' pending_user.pk %}"
+                              onsubmit="return confirm('Reject and permanently remove this account?');">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-sm btn-outline-danger">Reject &amp; Remove</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+</div>
+
+<div class="d-flex align-items-center gap-2 mb-3">
+    <h6 class="mb-0">Verified But Not Linked to a Hospital</h6>
+    {% if unlinked_staff %}<span class="badge bg-danger">{{ unlinked_staff|length }}</span>{% endif %}
+</div>
+
+<div class="card shadow-sm">
+    {% if not unlinked_staff %}
+    <div class="card-body text-center py-4">
+        <p class="text-muted mb-0">None — every verified hospital staff account is linked correctly.</p>
+    </div>
+    {% else %}
+    <div class="table-responsive">
+        <table class="table align-middle mb-0">
+            <thead>
+                <tr>
+                    <th>Username</th>
+                    <th style="min-width: 320px;">Link to hospital</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for orphan in unlinked_staff %}
+                <tr>
+                    <td class="fw-semibold">{{ orphan.username }}</td>
+                    <td>
+                        <form method="post" action="{% url 'dashboard:admin_link_staff' orphan.pk %}"
+                              class="d-flex gap-2 align-items-center">
+                            {% csrf_token %}
+                            <select name="hospital_id" class="form-select form-select-sm" required>
+                                <option value="">Assign hospital...</option>
+                                {% for hospital in hospitals %}
+                                    <option value="{{ hospital.id }}">{{ hospital.name }}</option>
+                                {% endfor %}
+                            </select>
+                            <input type="text" name="position" class="form-control form-control-sm"
+                                   placeholder="Position (optional)">
+                            <button type="submit" class="btn btn-sm btn-success text-nowrap">Link</button>
+                        </form>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
