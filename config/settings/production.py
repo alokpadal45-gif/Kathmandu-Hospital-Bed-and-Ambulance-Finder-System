@@ -1,7 +1,3 @@
-# production settings
-# run with DJANGO_SETTINGS_MODULE=config.settings.production
-# everything sensitive comes from env vars so this file is safe to push to github
-
 from .base import *  # noqa: F401,F403
 from decouple import config, Csv
 
@@ -9,31 +5,19 @@ DEBUG = False
 
 ALLOWED_HOSTS = config('ALLOWED_HOSTS', cast=Csv())
 
-# mysql in production (this was listed as optional in the feasibility study)
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.mysql',
-        'NAME': config('DB_NAME'),
-        'USER': config('DB_USER'),
-        'PASSWORD': config('DB_PASSWORD'),
-        'HOST': config('DB_HOST', default='localhost'),
-        'PORT': config('DB_PORT', default='3306'),
-        'OPTIONS': {'charset': 'utf8mb4'},
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
     }
 }
 
-# redis backed channel layer so live updates work across multiple daphne
-# workers, not just one process
 CHANNEL_LAYERS = {
     'default': {
-        'BACKEND': 'channels_redis.core.RedisChannelLayer',
-        'CONFIG': {
-            'hosts': [config('REDIS_URL', default='redis://127.0.0.1:6379/0')],
-        },
+        'BACKEND': 'channels.layers.InMemoryChannelLayer',
     }
 }
 
-# security stuff
 SECURE_SSL_REDIRECT = True
 SESSION_COOKIE_SECURE = True
 CSRF_COOKIE_SECURE = True
