@@ -40,14 +40,16 @@ LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
     'handlers': {
-        'file': {
-            'level': 'WARNING',
-            'class': 'logging.FileHandler',
-            'filename': BASE_DIR / 'logs' / 'production.log',
+        'console': {
+            'level': 'ERROR',
+            'class': 'logging.StreamHandler',
         },
     },
-    'root': {
-        'handlers': ['file'],
-        'level': 'WARNING',
+    'loggers': {
+        'django': {
+            'handlers': ['console'],
+            'level': 'ERROR',
+            'propagate': True,
+        },
     },
 }
