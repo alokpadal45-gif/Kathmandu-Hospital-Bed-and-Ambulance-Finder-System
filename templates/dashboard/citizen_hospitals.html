@@ -153,6 +153,8 @@
 (function() {
     const hospitalData = JSON.parse(document.getElementById('hospital-map-data').textContent);
     const ambulanceData = JSON.parse(document.getElementById('ambulance-map-data').textContent);
+    const citizenLat = {{ user_lat|default:"null" }};
+    const citizenLng = {{ user_lng|default:"null" }};
 
     const statusColors = { available: '#1F9D63', limited: '#B9781A', critical: '#C0392B' };
 
@@ -180,6 +182,18 @@
         markers.push(marker);
     });
 
+    if (citizenLat !== null && citizenLng !== null) {
+        const citizenMarker = L.circleMarker([citizenLat, citizenLng], {
+            radius: 8,
+            fillColor: '#0F3D5C',
+            color: '#fff',
+            weight: 2,
+            fillOpacity: 1,
+        }).addTo(map);
+        citizenMarker.bindPopup('<strong>Your location</strong>');
+        markers.push(citizenMarker);
+    }
+
     const ambulanceIcon = L.divIcon({
         className: '',
         html: '<div style="background:#0F3D5C;color:#fff;border-radius:50%;width:26px;height:26px;display:flex;align-items:center;justify-content:center;font-size:14px;border:2px solid #fff;box-shadow:0 1px 4px rgba(0,0,0,.3);">&#128657;</div>',
@@ -187,16 +201,50 @@
         iconAnchor: [13, 13],
     });
 
+    const ambulanceMarkers = [];
+
     ambulanceData.forEach(function(a) {
-        const marker = L.marker([a.lat, a.lng], { icon: ambulanceIcon }).addTo(map);
-        const statusLabel = a.status === 'dispatched' ? 'On a call' : 'At base';
-        marker.bindPopup(
-            '<strong>' + a.vehicle_number + '</strong><br>' +
-            a.hospital_name + '<br>' +
-            statusLabel
-        );
+        const marker = L.marker([a.origin_lat, a.origin_lng], { icon: ambulanceIcon }).addTo(map);
+        marker.bindPopup(buildPopupText(a, 0));
         markers.push(marker);
+
+        if (a.status === 'dispatched') {
+            ambulanceMarkers.push({ data: a, marker: marker });
+        }
     });
+
+    function buildPopupText(a, progress) {
+        let statusLabel;
+        if (a.status !== 'dispatched') {
+            statusLabel = 'At base';
+        } else if (progress >= 1) {
+            statusLabel = 'Arrived at pickup location';
+        } else {
+            statusLabel = 'En route (' + Math.round(progress * 100) + '%)';
+        }
+        return '<strong>' + a.vehicle_number + '</strong><br>' + a.hospital_name + '<br>' + statusLabel;
+    }
+
+    function updateAmbulancePositions() {
+        const now = Date.now();
+        ambulanceMarkers.forEach(function(entry) {
+            const a = entry.data;
+            const startedAt = new Date(a.started_at).getTime();
+            const elapsedSeconds = (now - startedAt) / 1000;
+            const progress = Math.max(0, Math.min(1, elapsedSeconds / a.travel_seconds));
+
+            const lat = a.origin_lat + (a.dest_lat - a.origin_lat) * progress;
+            const lng = a.origin_lng + (a.dest_lng - a.origin_lng) * progress;
+
+            entry.marker.setLatLng([lat, lng]);
+            entry.marker.setPopupContent(buildPopupText(a, progress));
+        });
+    }
+
+    if (ambulanceMarkers.length > 0) {
+        updateAmbulancePositions();
+        setInterval(updateAmbulancePositions, 2000);
+    }
 
     if (markers.length > 0) {
         const group = L.featureGroup(markers);

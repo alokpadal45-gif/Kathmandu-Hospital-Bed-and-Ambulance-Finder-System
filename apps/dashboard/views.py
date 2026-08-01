@@ -90,22 +90,52 @@ def citizen_hospital_list(request):
         for h in hospitals
     ]
 
+    AVERAGE_SPEED_KMH = 35
+
     ambulance_map_data = []
     for h in hospitals:
         for amb in h.ambulances.all():
             if amb.status == AmbulanceStatus.AVAILABLE:
-                lat, lng = float(h.latitude), float(h.longitude)
+                ambulance_map_data.append({
+                    'vehicle_number': amb.vehicle_number,
+                    'hospital_name': h.name,
+                    'status': 'available',
+                    'origin_lat': float(h.latitude),
+                    'origin_lng': float(h.longitude),
+                    'dest_lat': float(h.latitude),
+                    'dest_lng': float(h.longitude),
+                    'started_at': None,
+                    'travel_seconds': 0,
+                })
             elif amb.status == AmbulanceStatus.DISPATCHED:
-                lat, lng = float(h.latitude) + 0.004, float(h.longitude) + 0.004
-            else:
-                continue
-            ambulance_map_data.append({
-                'vehicle_number': amb.vehicle_number,
-                'hospital_name': h.name,
-                'status': amb.status,
-                'lat': lat,
-                'lng': lng,
-            })
+                active_req = AmbulanceRequest.objects.filter(
+                    assigned_ambulance=amb,
+                    status__in=[RequestStatus.ACCEPTED, RequestStatus.DISPATCHED],
+                ).first()
+
+                if active_req and active_req.pickup_latitude and active_req.pickup_longitude:
+                    dest_lat = float(active_req.pickup_latitude)
+                    dest_lng = float(active_req.pickup_longitude)
+                    distance_km = haversine_km(float(h.latitude), float(h.longitude), dest_lat, dest_lng)
+                    travel_seconds = max(20, (distance_km / AVERAGE_SPEED_KMH) * 3600)
+                    started_at = (active_req.accepted_at or timezone.now()).isoformat()
+                else:
+                    dest_lat = float(h.latitude) + 0.004
+                    dest_lng = float(h.longitude) + 0.004
+                    travel_seconds = 60
+                    started_at = timezone.now().isoformat()
+
+                ambulance_map_data.append({
+                    'vehicle_number': amb.vehicle_number,
+                    'hospital_name': h.name,
+                    'status': 'dispatched',
+                    'origin_lat': float(h.latitude),
+                    'origin_lng': float(h.longitude),
+                    'dest_lat': dest_lat,
+                    'dest_lng': dest_lng,
+                    'started_at': started_at,
+                    'travel_seconds': travel_seconds,
+                })
 
     return render(request, 'dashboard/citizen_hospitals.html', {
         'hospitals': hospitals,
@@ -118,9 +148,9 @@ def citizen_hospital_list(request):
         'ambulance_only': ambulance_only,
         'hospital_types': HospitalType.choices,
         'has_location': bool(user_lat and user_lng),
+        'user_lat': user_lat,
+        'user_lng': user_lng,
     })
-
-
 @role_required(UserRole.CITIZEN)
 def citizen_hospital_detail(request, pk):
     hospital = get_object_or_404(Hospital, pk=pk, is_active=True)
