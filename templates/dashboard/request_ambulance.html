@@ -1,4 +1,3 @@
-
 {% extends "base.html" %}
 
 {% block title %}Request an Ambulance — Kathmandu Emergency Finder{% endblock %}
@@ -17,11 +16,25 @@
                     Please provide accurate information for the fastest possible response.
                 </p>
 
-                <form method="post" novalidate>
+                <form method="post" novalidate id="ambulanceRequestForm">
                     {% csrf_token %}
                     {% for field in form %}
                         {% if field.is_hidden %}
                             {{ field }}
+                        {% elif field.name == 'pickup_address' %}
+                        <div class="mb-3">
+                            <label for="{{ field.id_for_label }}" class="form-label">{{ field.label }}</label>
+                            <div class="input-group">
+                                {{ field }}
+                                <button type="button" class="btn btn-outline-secondary" id="locateAddressBtn">
+                                    Find on map
+                                </button>
+                            </div>
+                            <div id="locateStatus" class="form-text"></div>
+                            {% for error in field.errors %}
+                                <div class="text-danger small mt-1">{{ error }}</div>
+                            {% endfor %}
+                        </div>
                         {% else %}
                         <div class="mb-3">
                             <label for="{{ field.id_for_label }}" class="form-label">{{ field.label }}</label>
@@ -96,20 +109,63 @@
         maxZoom: 18,
     }).addTo(map);
 
-    let userMarker = null;
+    let pickupMarker = null;
+
+    function setPickupLocation(lat, lng, label) {
+        document.getElementById('id_pickup_latitude').value = lat;
+        document.getElementById('id_pickup_longitude').value = lng;
+
+        if (pickupMarker) {
+            map.removeLayer(pickupMarker);
+        }
+        pickupMarker = L.marker([lat, lng]).addTo(map).bindPopup(label || 'Pickup location').openPopup();
+        map.setView([lat, lng], 15);
+    }
 
     if (navigator.geolocation) {
         navigator.geolocation.getCurrentPosition(function(position) {
             const lat = position.coords.latitude;
             const lng = position.coords.longitude;
-
-            document.getElementById('id_pickup_latitude').value = lat;
-            document.getElementById('id_pickup_longitude').value = lng;
-
-            map.setView([lat, lng], 14);
-            userMarker = L.marker([lat, lng]).addTo(map).bindPopup('Your location').openPopup();
+            setPickupLocation(lat, lng, 'Your current location');
         });
     }
+
+    const locateBtn = document.getElementById('locateAddressBtn');
+    const addressInput = document.getElementById('id_pickup_address');
+    const statusEl = document.getElementById('locateStatus');
+
+    locateBtn.addEventListener('click', function() {
+        const query = addressInput.value.trim();
+        if (!query) {
+            statusEl.textContent = 'Type an address first.';
+            statusEl.className = 'form-text text-danger';
+            return;
+        }
+
+        statusEl.textContent = 'Searching...';
+        statusEl.className = 'form-text text-muted';
+
+        const searchQuery = query + ', Kathmandu, Nepal';
+        const url = 'https://nominatim.openstreetmap.org/search?format=json&limit=1&viewbox=85.26,27.66,85.42,27.76&bounded=1&countrycodes=np&q=' + encodeURIComponent(searchQuery);
+
+        fetch(url, { headers: { 'Accept-Language': 'en' } })
+            .then(function(response) { return response.json(); })
+            .then(function(results) {
+                if (results.length === 0) {
+                    statusEl.textContent = 'Could not find that address. Try a well-known area name, e.g. "Baneshwor" or "New Road".';
+                    statusEl.className = 'form-text text-danger';
+                    return;
+                }
+                const result = results[0];
+                setPickupLocation(parseFloat(result.lat), parseFloat(result.lon), query);
+                statusEl.textContent = 'Location set from your typed address.';
+                statusEl.className = 'form-text text-success';
+            })
+            .catch(function() {
+                statusEl.textContent = 'Could not look up that address right now.';
+                statusEl.className = 'form-text text-danger';
+            });
+    });
 })();
 </script>
 {% endblock %}
