@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load static %}
 
 {% block title %}Find a Hospital — Kathmandu Emergency Finder{% endblock %}
 
@@ -84,10 +85,13 @@
             <div class="col-md-6">
                 <a href="{% url 'dashboard:citizen_hospital_detail' hospital.pk %}" class="text-decoration-none text-reset">
                 <div class="card hospital-card status-{{ hospital.overall_status }} h-100" data-hospital-id="{{ hospital.id }}">
-                    {% if hospital.image %}
+                 {% if hospital.image %}
                         <img src="{{ hospital.image.url }}" class="card-img-top hospital-photo" alt="{{ hospital.name }}">
                     {% else %}
-                        <div class="hospital-photo-generated" style="background: linear-gradient(135deg, {{ hospital.avatar_color }} 0%, {{ hospital.avatar_color }}CC 100%);">
+                        <img src="{% static 'hospital_photos/'|add:hospital.name|slugify|add:'.jpg' %}"
+                             class="card-img-top hospital-photo" alt="{{ hospital.name }}"
+                             onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                        <div class="hospital-photo-generated" style="display:none; background: linear-gradient(135deg, {{ hospital.avatar_color }} 0%, {{ hospital.avatar_color }}CC 100%);">
                             <span class="hospital-photo-initial">{{ hospital.name|slice:":1" }}</span>
                         </div>
                     {% endif %}

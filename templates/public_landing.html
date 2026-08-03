@@ -70,10 +70,13 @@
     {% for hospital in featured_hospitals %}
     <div class="col-md-4">
         <div class="card hospital-card status-{{ hospital.overall_status }} h-100">
-            {% if hospital.image %}
+           {% if hospital.image %}
                 <img src="{{ hospital.image.url }}" class="card-img-top hospital-photo" alt="{{ hospital.name }}">
             {% else %}
-                <div class="hospital-photo-generated" style="background: linear-gradient(135deg, {{ hospital.avatar_color }} 0%, {{ hospital.avatar_color }}CC 100%);">
+                <img src="{% static 'hospital_photos/'|add:hospital.name|slugify|add:'.jpg' %}"
+                     class="card-img-top hospital-photo" alt="{{ hospital.name }}"
+                     onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                <div class="hospital-photo-generated" style="display:none; background: linear-gradient(135deg, {{ hospital.avatar_color }} 0%, {{ hospital.avatar_color }}CC 100%);">
                     <span class="hospital-photo-initial">{{ hospital.name|slice:":1" }}</span>
                     <svg class="hospital-photo-cross" width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
                         <path d="M10 3v14M3 10h14" stroke="#fff" stroke-width="2.5" stroke-linecap="round" opacity="0.85"/>
