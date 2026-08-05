@@ -148,8 +148,13 @@
         const searchQuery = query + ', Kathmandu, Nepal';
         const url = 'https://nominatim.openstreetmap.org/search?format=json&limit=1&viewbox=85.26,27.66,85.42,27.76&bounded=1&countrycodes=np&q=' + encodeURIComponent(searchQuery);
 
-        fetch(url, { headers: { 'Accept-Language': 'en' } })
-            .then(function(response) { return response.json(); })
+        fetch(url)
+            .then(function(response) {
+                if (!response.ok) {
+                    throw new Error('Network response was not ok');
+                }
+                return response.json();
+            })
             .then(function(results) {
                 if (results.length === 0) {
                     statusEl.textContent = 'Could not find that address. Try a well-known area name, e.g. "Baneshwor" or "New Road".';
