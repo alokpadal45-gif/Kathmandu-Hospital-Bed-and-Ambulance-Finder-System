@@ -73,7 +73,7 @@
            {% if hospital.image %}
                 <img src="{{ hospital.image.url }}" class="card-img-top hospital-photo" alt="{{ hospital.name }}">
             {% else %}
-                <img src="{% static 'hospital_photos/'|add:hospital.name|slugify|add:'.jpg' %}"
+                <img src="/static/hospital_photos/{{ hospital.name|slugify }}.jpg"
                      class="card-img-top hospital-photo" alt="{{ hospital.name }}"
                      onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
                 <div class="hospital-photo-generated" style="display:none; background: linear-gradient(135deg, {{ hospital.avatar_color }} 0%, {{ hospital.avatar_color }}CC 100%);">
